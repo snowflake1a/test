@@ -1,20 +1,9 @@
 import time
 import pyupbit
 import datetime
-import requests
-
-
 
 access = "dAmxI9c29EJgYManThvlQlLTppVMzwbRcBIoOmkz"
 secret = "c8a3i0r9smnxTuxNxPBtP0HtyekPOjPmmVdsOfCm"
-myToken = "xoxb-1670055033346-1693899794048-U7uY8N2o14qtZqzATwsJemI7"
-
-def post_message(token, channel, text):
-    """슬랙 메시지 전송"""
-    response = requests.post("https://slack.com/api/chat.postMessage",
-        headers={"Authorization": "Bearer "+token},
-        data={"channel": channel,"text": text}
-    )
 
 def get_target_price(ticker, k):
     """변동성 돌파 전략으로 매수 목표가 조회"""
@@ -34,11 +23,11 @@ def get_ma15(ticker):
     ma15 = df['close'].rolling(15).mean().iloc[-1]
     return ma15
 
-def get_balance(coin):
+def get_balance(ticker):
     """잔고 조회"""
     balances = upbit.get_balances()
     for b in balances:
-        if b['currency'] == coin:
+        if b['currency'] == ticker:
             if b['balance'] is not None:
                 return float(b['balance'])
             else:
@@ -51,9 +40,8 @@ def get_current_price(ticker):
 # 로그인
 upbit = pyupbit.Upbit(access, secret)
 print("autotrade start")
-# 시작 메세지 슬랙 전송
-post_message(myToken,"#stock", "autotrade start")
 
+# 자동매매 시작
 while True:
     try:
         now = datetime.datetime.now()
@@ -67,15 +55,12 @@ while True:
             if target_price < current_price and ma15 < current_price:
                 krw = get_balance("KRW")
                 if krw > 5000:
-                    buy_result = upbit.buy_market_order("KRW-BTC", krw*0.9995)
-                    post_message(myToken,"#stock", "BTC buy : " +str(buy_result))
+                    upbit.buy_market_order("KRW-BTC", krw*0.9995)
         else:
             btc = get_balance("BTC")
             if btc > 0.00008:
-                sell_result = upbit.sell_market_order("KRW-BTC", btc*0.9995)
-                post_message(myToken,"#stock", "BTC buy : " +str(sell_result))
+                upbit.sell_market_order("KRW-BTC", btc*0.9995)
         time.sleep(1)
     except Exception as e:
         print(e)
-        post_message(myToken,"#stock", e)
         time.sleep(1)
