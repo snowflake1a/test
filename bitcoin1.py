@@ -17,11 +17,11 @@ def get_start_time(ticker):
     start_time = df.index[0]
     return start_time
 
-def get_ma15(ticker):
+def get_ma5(ticker):
     """15일 이동 평균선 조회"""
-    df = pyupbit.get_ohlcv(ticker, interval="day", count=15)
-    ma15 = df['close'].rolling(15).mean().iloc[-1]
-    return ma15
+    df = pyupbit.get_ohlcv(ticker, interval="day", count=5)
+    ma5 = df['close'].rolling(5).mean().iloc[-1]
+    return ma5
 
 def get_balance(ticker):
     """잔고 조회"""
@@ -45,21 +45,23 @@ print("autotrade start")
 while True:
     try:
         now = datetime.datetime.now()
-        start_time = get_start_time("KRW-BTC")
+        start_time = get_start_time("KRW-ETH")
         end_time = start_time + datetime.timedelta(days=1)
 
         if start_time < now < end_time - datetime.timedelta(seconds=10):
-            target_price = get_target_price("KRW-BTC", 0.5)
-            ma15 = get_ma15("KRW-BTC")
-            current_price = get_current_price("KRW-BTC")
-            if target_price < current_price and ma15 < current_price:
+            target_price = get_target_price("KRW-ETH", 0.7)
+            ma5 = get_ma5("KRW-ETH")
+            current_price = get_current_price("KRW-ETH")
+            if target_price < current_price and ma5 < current_price:
                 krw = get_balance("KRW")
                 if krw > 5000:
-                    upbit.buy_market_order("KRW-BTC", krw*0.9995)
+                    buy_result = upbit.buy_market_order("KRW-ETH", krw*0.9995)
+                    if buy_result < current_price * 1.02:
+                        upbit.sell_market_order("KRW-ETH", btc*0.9995)
         else:
-            btc = get_balance("BTC")
+            btc = get_balance("ETH")
             if btc > 0.00008:
-                upbit.sell_market_order("KRW-BTC", btc*0.9995)
+                upbit.sell_market_order("KRW-ETH", btc*0.9995)
         time.sleep(1)
     except Exception as e:
         print(e)
